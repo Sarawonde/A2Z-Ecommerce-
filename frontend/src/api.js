@@ -1,4 +1,4 @@
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const getSession = () => JSON.parse(localStorage.getItem('atoz-session') || 'null');
 export const saveSession = (session) => session
@@ -11,7 +11,7 @@ export async function api(path, options = {}) {
     ...options,
     headers: {
       ...(options.body && !(options.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
-      ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {}),
+      ...(session?.token ? { Authorization: 'Bearer ' + session.token } : {}),
       ...options.headers,
     },
   });
