@@ -4,8 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(), tailwindcss()],
+  plugins: [react(), tailwindcss()],
+  base: process.env.VITE_BASE_PATH || "/A2Z-Ecommerce-",
   server: {
     proxy: {
       '/api': 'http://localhost:4000',
