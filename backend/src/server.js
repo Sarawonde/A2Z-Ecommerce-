@@ -13,14 +13,26 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const path = require('path');
 
-const app = express(); // ✅ Define app BEFORE using it
+const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ===== MIDDLEWARES =====
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://a2-z-ecommerce-zaup.vercel.app'
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.log('Blocked by CORS:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 
