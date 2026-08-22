@@ -1,49 +1,242 @@
 require('dotenv').config();
+
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const User = require('./models/User');
 const Product = require('./models/Product');
 const Category = require('./models/Category');
 
 const products = [
-  ['Organic Bananas', 'Fresh locally sourced bananas.', 120, 'Fruits & Vegetables', 40, true],
-  ['Red Apples', 'Crisp, sweet apples sold by the kilogram.', 240, 'Fruits & Vegetables', 30, true],
-  ['Fresh Tomatoes', 'Ripe tomatoes from Ethiopian farms.', 95, 'Fruits & Vegetables', 55, false],
-  ['Roasted Coffee', 'Premium Ethiopian arabica coffee, 500g.', 480, 'Beverages', 25, true],
-  ['Mango Juice', 'One litre of natural mango juice.', 180, 'Beverages', 35, false],
-  ['Mineral Water', 'Pack of six 1-litre bottles.', 150, 'Beverages', 60, false],
-  ['Whole Grain Bread', 'Freshly baked whole-grain loaf.', 85, 'Bakery', 20, true],
-  ['Natural Honey', 'Pure Ethiopian highland honey, 500g.', 390, 'Pantry', 18, true],
+  {
+    name: 'Organic Bananas',
+    description: 'Fresh locally sourced bananas.',
+    price: 120,
+    category: 'Fruits & Vegetables',
+    stock: 40,
+    featured: true,
+    image: '/products/organic-bananas.png',
+  },
+  {
+    name: 'Red Apples',
+    description: 'Crisp, sweet apples sold by the kilogram.',
+    price: 240,
+    category: 'Fruits & Vegetables',
+    stock: 30,
+    featured: true,
+    image: '/products/red-apples.png',
+  },
+  {
+    name: 'Fresh Tomatoes',
+    description: 'Ripe tomatoes from Ethiopian farms.',
+    price: 95,
+    category: 'Fruits & Vegetables',
+    stock: 55,
+    featured: false,
+    image: '/products/fresh-tomatoes.png',
+  },
+  {
+    name: 'Roasted Coffee',
+    description: 'Premium Ethiopian arabica coffee, 500g.',
+    price: 480,
+    category: 'Beverages',
+    stock: 25,
+    featured: true,
+    image: '/products/roasted-coffee.png',
+  },
+  {
+    name: 'Mango Juice',
+    description: 'One litre of natural mango juice.',
+    price: 180,
+    category: 'Beverages',
+    stock: 35,
+    featured: false,
+    image: '/products/mango-juice.png',
+  },
+  {
+    name: 'Mineral Water',
+    description: 'Pack of six 1-litre bottles.',
+    price: 150,
+    category: 'Beverages',
+    stock: 60,
+    featured: false,
+    image: '/products/mineral-water.png',
+  },
+  {
+    name: 'Whole Grain Bread',
+    description: 'Freshly baked whole-grain loaf.',
+    price: 85,
+    category: 'Bakery',
+    stock: 20,
+    featured: true,
+    image: '/products/whole-grain-bread.png',
+  },
+  {
+    name: 'Natural Honey',
+    description: 'Pure Ethiopian highland honey, 500g.',
+    price: 390,
+    category: 'Pantry',
+    stock: 18,
+    featured: true,
+    image: '/products/natural-honey.png',
+  },
 ];
 
-const productImages = {
-  'Organic Bananas': '/products/organic-bananas.png',
-  'Red Apples': '/products/red-apples.png',
-  'Fresh Tomatoes': '/products/fresh-tomatoes.png',
-  'Roasted Coffee': '/products/roasted-coffee.png',
-  'Mango Juice': '/products/mango-juice.png',
-  'Mineral Water': '/products/mineral-water.png',
-  'Whole Grain Bread': '/products/whole-grain-bread.png',
-  'Natural Honey': '/products/natural-honey.png',
-};
+const categories = [
+  'Fruits & Vegetables',
+  'Beverages',
+  'Bakery',
+  'Pantry',
+];
 
 const run = async () => {
-  await connectDB();
-  let seller = await User.findOne({ email: 'seller@atoz.test' });
-  if (!seller) seller = await User.create({ name: 'A-to-Z Seller', email: 'seller@atoz.test', password: 'Seller123!', role: 'seller' });
-  let admin = await User.findOne({ role: 'admin' });
-  if (!admin) admin = new User({ role: 'admin' });
-  admin.name = 'Saron';
-  admin.email = 'saron@gmail.com';
-  admin.password = 'saron1234';
-  await admin.save();
-  if (!(await Product.exists())) await Product.insertMany(products.map(([name, description, price, category, stock, featured]) => ({
-    name, description, price, category, stock, featured, seller: seller._id,
-    image: productImages[name],
-  })));
-  await Promise.all(Object.entries(productImages).map(([name, image]) => Product.updateOne({ name }, { image, approvalStatus: 'approved' })));
-  await Promise.all(['Fruits & Vegetables', 'Beverages', 'Bakery', 'Pantry'].map((name) => Category.updateOne({ name }, { $setOnInsert: { name, active: true } }, { upsert: true })));
-  console.log('Seed complete');
-  process.exit(0);
+  try {
+    // Connect to Railway MongoDB
+    await connectDB();
+
+    console.log('MongoDB connected');
+
+    // ----------------------------------
+    // CREATE / FIND SELLER
+    // ----------------------------------
+
+    let seller = await User.findOne({
+      email: 'seller@atoz.test',
+    });
+
+    if (!seller) {
+      seller = await User.create({
+        name: 'A-to-Z Seller',
+        email: 'seller@atoz.test',
+        password: 'Seller123!',
+        role: 'seller',
+      });
+
+      console.log('Seller account created');
+    } else {
+      console.log('Seller account already exists');
+    }
+
+    // ----------------------------------
+    // CREATE / UPDATE ADMIN
+    // ----------------------------------
+
+    let admin = await User.findOne({
+      email: 'saron@gmail.com',
+    });
+
+    if (!admin) {
+      admin = await User.create({
+        name: 'Saron',
+        email: 'saron@gmail.com',
+        password: 'saron1234',
+        role: 'admin',
+      });
+
+      console.log('Admin account created');
+    } else {
+      admin.name = 'Saron';
+      admin.role = 'admin';
+
+      await admin.save();
+
+      console.log('Admin account already exists');
+    }
+
+    // ----------------------------------
+    // CREATE / UPDATE CATEGORIES
+    // ----------------------------------
+
+    for (const categoryName of categories) {
+      await Category.findOneAndUpdate(
+        { name: categoryName },
+        {
+          $set: {
+            name: categoryName,
+            active: true,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+    }
+
+    console.log('Categories seeded');
+
+    // ----------------------------------
+    // CREATE / UPDATE PRODUCTS
+    // ----------------------------------
+    for (const product of products) {
+      await Product.findOneAndUpdate(
+        {
+          name: product.name,
+        },
+        {
+          $set: {
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            category: product.category,
+            stock: product.stock,
+            featured: product.featured,
+            image: product.image,
+
+            // Important:
+            // public product API only shows
+            // approved products.
+            approvalStatus: 'approved',
+
+            rejectionReason: '',
+            seller: seller._id,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+
+      console.log(Seeded product: ${product.name});
+    }
+
+    // ----------------------------------
+    // VERIFY
+    // ----------------------------------
+
+    const productCount = await Product.countDocuments({
+      approvalStatus: 'approved',
+    });
+
+    const categoryCount = await Category.countDocuments({
+      active: true,
+    });
+
+    console.log('');
+    console.log('==============================');
+    console.log('Seed complete');
+    console.log(Approved products: ${productCount});
+    console.log(Active categories: ${categoryCount});
+    console.log('==============================');
+
+    await mongoose.connection.close();
+    process.exit(0);
+
+  } catch (error) {
+    console.error('Seed error:', error);
+
+    try {
+      await mongoose.connection.close();
+    } catch (closeError) {
+      // Ignore connection close error
+    }
+
+    process.exit(1);
+  }
 };
 
-run().catch((error) => { console.error(error); process.exit(1); });
+run();
