@@ -1,4 +1,9 @@
-const API_URL = 'https://a2z-ecommerce-production.up.railway.app/api';
+const API_ORIGIN = (
+  import.meta.env.VITE_API_URL ||
+  'https://a2z-ecommerce-production.up.railway.app'
+).replace(/\/$/, '');
+
+const API_URL = `${API_ORIGIN}/api`;
 
 export const getSession = () =>
   JSON.parse(localStorage.getItem('atoz-session') || 'null');
@@ -11,14 +16,14 @@ export const saveSession = (session) =>
 export async function api(path, options = {}) {
   const session = getSession();
 
-  const response = await fetch(${API_URL}${path}, {
+  const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       ...(options.body && !(options.body instanceof FormData)
         ? { 'Content-Type': 'application/json' }
         : {}),
       ...(session?.token
-        ? { Authorization: Bearer ${session.token} }
+        ? { Authorization: `Bearer ${session.token}` }
         : {}),
       ...options.headers,
     },

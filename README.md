@@ -41,6 +41,13 @@ npm run dev
 
 The backend defaults to port `4000`. Ensure `CLIENT_ORIGIN` and frontend API URLs match the ports used in your environment.
 
+For deployment, configure:
+
+- Railway backend: `MONGO_URI`, `JWT_SECRET`, and `CLIENT_ORIGIN` (your Vercel URL; multiple URLs can be comma-separated)
+- Vercel frontend: `VITE_API_URL` (your Railway public URL without `/api` or a trailing slash)
+
+After changing `VITE_API_URL`, redeploy the frontend because Vite embeds it at build time.
+
 Seed the database with demo products and role-based accounts:
 
 ```sh

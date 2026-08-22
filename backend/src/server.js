@@ -24,11 +24,18 @@ const PORT = process.env.PORT || 4000;
 // CORS CONFIGURATION
 // =====================================================
 
-// Permanent production frontend
-const allowedOrigins = [
+// Permanent origins plus any comma-separated deployment URLs configured on Railway.
+const configuredOrigins = (process.env.CLIENT_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const allowedOrigins = new Set([
   'http://localhost:5173',
   'https://a2-z-ecommerce-zaup.vercel.app',
-];
+  'https://a2-z-ecommerce-vma1.vercel.app',
+  ...configuredOrigins,
+]);
 
 // Allow this project's Vercel preview deployments.
 // Example:
@@ -45,7 +52,7 @@ app.use(
       }
 
       // Allow known production/local domains
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.has(origin.replace(/\/$/, ''))) {
         return callback(null, true);
       }
 
