@@ -88,17 +88,13 @@ const categories = [
   'Pantry',
 ];
 
-const run = async () => {
+async function run() {
   try {
-    // Connect to Railway MongoDB
     await connectDB();
 
     console.log('MongoDB connected');
 
-    // ----------------------------------
-    // CREATE / FIND SELLER
-    // ----------------------------------
-
+    // ===== SELLER =====
     let seller = await User.findOne({
       email: 'seller@atoz.test',
     });
@@ -113,13 +109,15 @@ const run = async () => {
 
       console.log('Seller account created');
     } else {
+      if (seller.role !== 'seller') {
+        seller.role = 'seller';
+        await seller.save();
+      }
+
       console.log('Seller account already exists');
     }
 
-    // ----------------------------------
-    // CREATE / UPDATE ADMIN
-    // ----------------------------------
-
+    // ===== ADMIN =====
     let admin = await User.findOne({
       email: 'saron@gmail.com',
     });
@@ -142,13 +140,12 @@ const run = async () => {
       console.log('Admin account already exists');
     }
 
-    // ----------------------------------
-    // CREATE / UPDATE CATEGORIES
-    // ----------------------------------
-
+    // ===== CATEGORIES =====
     for (const categoryName of categories) {
       await Category.findOneAndUpdate(
-        { name: categoryName },
+        {
+          name: categoryName,
+        },
         {
           $set: {
             name: categoryName,
@@ -166,29 +163,21 @@ const run = async () => {
 
     console.log('Categories seeded');
 
-    // ----------------------------------
-    // CREATE / UPDATE PRODUCTS
-    // ----------------------------------
+    // ===== PRODUCTS =====
     for (const product of products) {
       await Product.findOneAndUpdate(
         {
           name: product.name,
         },
         {
-          $set: {
-            name: product.name,
+          $set: {name: product.name,
             description: product.description,
             price: product.price,
             category: product.category,
             stock: product.stock,
             featured: product.featured,
             image: product.image,
-
-            // Important:
-            // public product API only shows
-            // approved products.
             approvalStatus: 'approved',
-
             rejectionReason: '',
             seller: seller._id,
           },
@@ -201,42 +190,34 @@ const run = async () => {
         }
       );
 
-      console.log(Seeded product: ${product.name});
+      console.log('Seeded product: ' + product.name);
     }
 
-    // ----------------------------------
-    // VERIFY
-    // ----------------------------------
-
-    const productCount = await Product.countDocuments({
+    // ===== VERIFY =====
+    const approvedProducts = await Product.countDocuments({
       approvalStatus: 'approved',
     });
 
-    const categoryCount = await Category.countDocuments({
+    const activeCategories = await Category.countDocuments({
       active: true,
     });
 
     console.log('');
     console.log('==============================');
     console.log('Seed complete');
-    console.log(Approved products: ${productCount});
-    console.log(Active categories: ${categoryCount});
+    console.log('Approved products: ' + approvedProducts);
+    console.log('Active categories: ' + activeCategories);
     console.log('==============================');
-
-    await mongoose.connection.close();
-    process.exit(0);
-
   } catch (error) {
     console.error('Seed error:', error);
-
+    process.exitCode = 1;
+  } finally {
     try {
       await mongoose.connection.close();
     } catch (closeError) {
-      // Ignore connection close error
+      // Ignore close errors during shutdown
     }
-
-    process.exit(1);
   }
-};
+}
 
 run();
